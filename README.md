@@ -8,7 +8,7 @@ This project is forked from [gds2ascii](https://github.com/leoheck/gds2ascii).
 - added argparse for command line help and usage
 - created SVG groups for layers to make them easier to handle in an SVG editor (hide layout layerwise, re-order layers, select all object on a layer together)
 - layer style is assigned to the layer groups, which results in a smaller svg file
-- code is python3 compatible
+- code is python3 compatible (and requires python 3.5+ because it relies on `subprocess.run()` )
 - removed stroke (=edge highlight) from the objects; (it's my personal preference)
 
 ## Further improvement ideas 
