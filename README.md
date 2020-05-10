@@ -25,11 +25,11 @@ This project is forked from [gds2ascii](https://github.com/leoheck/gds2ascii).
 ## Usage examples
 
 ```bash
-ascii2dump2svg my_circuit.gds
+asciidump2svg my_circuit.gds
 ```
 generates `my_circuit.svg` with the default technology file.
 
 ```bash
-ascii2dump2svg my_circuit.gds -c cell_to_publish -t freePDK45.csv -o publication_layout.svg
+asciidump2svg my_circuit.gds -c cell_to_publish -t freePDK45.csv -o publication_layout.svg
 ```
 generates `publication_layout.svg` file from the `cell_to_publish` cell in the `my_circuit.gds` stream with the layer style definition from `freePDK45.csv`.
