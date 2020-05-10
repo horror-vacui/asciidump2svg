@@ -30,7 +30,7 @@ command -v gds2ascii >/dev/null 2>&1 || { echo >&2 "Executable 'gds2ascii' is no
 gds2ascii $gdsfile > $asciidumpfile
 
 # Convert ASCII Dump to SVG 
-$(dirname $0)/asciidump2svg -i $asciidumpfile -o $svgfile -t $techfile
+$(dirname $0)/asciidump2svg $asciidumpfile -o $svgfile -t $techfile
 
 # Fit the design canvas
 inkscape --verb=FitCanvasToDrawing --verb=ZoomPage --verb=FileSave --verb=FileQuit $svgfile 2> /dev/null
