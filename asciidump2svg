@@ -4,6 +4,7 @@
 Cadence Layout to SVG Converter
 Written by: Matthew Beckler (mbeckler@cmu.edu)
 Modified by: Leandro Heck (leoheck@gmail.com) 11 Nov 2014
+Modified by: Zoltan Tibenszky (zoltan.tibenszky@gmail.com) 10 Mai 2020
 
 Website: For the latest version and more information, visit:
          http://www.mbeckler.org/cadence_plot/
@@ -50,53 +51,8 @@ How To:  First, you need to dump the layout from Cadence. From the ICFB window,
 
 import sys
 import operator
-
-"""
-These are the layer color definitions. For each layer, you should define a
-color for the polygon fill, the opacity of the fill, and a color for the
-polygon's border. The layer numbers were determined experimentally, and you
-may need to add more layer definitions if your design uses different/more
-layers. For instance, our designs didn't go past Metal4, so there are no
-definitions for metal layers 5 and above. Colors should be specified as a
-six-digit hex code (like HTML), and opacity should be either 0.0 - 1.0 or
-1 - 255.
-"""
-
-# To list the layers after the generation 
-# grep inkscape:label AND2_X1.svg | cut -d'"' -f2 | sort -n -b | uniq  
-# 1_od
-# 2_pwell
-# 3_nwell
-# 4_pp
-# 5_np
-# 9_poly
-# 10_contact
-# 11_m1drw
-# 235_unknown
-
-# FreePDK 45 nm mapping layers 
-od     = 1 
-pwell  = 2
-nwell  = 3
-pp     = 4
-np     = 5
-poly   = 9   # Polisylicon
-co     = 10  # Contact
-m1drw  = 11  # Metal1 Routing
-prb    = 235 # Place and Route Boundary
-
-layer_colors = {}    # ("fg color", "fg opacity", "stroke color",    "label"  )
-layer_colors[od]     = ("7ef46e",   "0.5",        "7ef46e",        "od"     ) # Oxide Diffusion, active area
-layer_colors[pwell]  = ("ff8000",   "0.1",        "ff8000",        "pwell"  )
-layer_colors[nwell]  = ("00ff4c",   "0.1",        "00ff4c",        "nwell"  )
-layer_colors[pp]     = ("135E04",   "0.1",        "135E04",        "pp"     )
-layer_colors[np]     = ("FF0000",   "0.1",        "FF0000",        "np"     ) 
-layer_colors[poly]   = ("e71f0d",   "0.6",        "e71f0d",        "poly"   )
-layer_colors[co]     = ("000000",   "0.5",        "000000",        "contact")
-layer_colors[m1drw]  = ("0000ff",   "0.3",        "0000ff",        "m1drw"  )
-layer_colors[prb]    = ("0000ff",   "0.0",        "0000ff",        "prb"    )
-
-#===========================================================================================================
+import argparse
+import csv
 
 
 # We keep track of all the undefined_layers so we can tell the user at the end of execution.
@@ -194,8 +150,11 @@ class Polygon(Cell):
             color_info = ("000000", "0.0", "ffffff")
 
 
-        style = "fill:#" + color_info[0] + ";fill-opacity:" + color_info[1] + ";stroke:#" + color_info[2] + ";stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-
+        # style = "fill:#" + color_info[0] + ";fill-opacity:" + color_info[1] + ";stroke:#" + color_info[2] + ";stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+        # no stroke - zti
+        # the order of the dict is defined here.
+        style = "fill:#" + color_info[0] + ";fill-opacity:" + color_info[1] + ";stroke:#" + color_info[2] + ";stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+        
         path = "M"
         first = True
         for p in self.points:
@@ -215,7 +174,7 @@ class Polygon(Cell):
         # to_write.append( (self.layer, '    <path\n       d="' + path + '%s"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
         # to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.layer) + '\"\n       d="' + path + '%s"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
         # to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.label) + '\"\n       d="' + path + '%s"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
-        to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.layer) + '_' + self.label + '\"\n       d="' + path + '%s"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
+        to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.layer) + '_' + self.label + '\"\n       d="' + path + '"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
 
 
 """
@@ -256,8 +215,23 @@ def dump_to_write_to_file(output_file):
     global to_write
     # first we sort the items:
     to_write = sorted(to_write, key=operator.itemgetter(0))
+    prev_layers = set()
     for x in to_write:
+        # print(x[0])
+        if x[0] not in prev_layers:
+            if len(prev_layers)>0:
+                output_file.write("</g>\n") # terminate the layer group
+            prev_layers.add(x[0])
+            # print("adding new layer group")
+            # print(d_number2layer.get(x[0]))
+            # tmp = layer_colors.get(x[0])
+            # print(tmp[-1])
+            if layer_colors.get(x[0]):
+                output_file.write("<g>\n<title>\"%s-%d\"</title>\n" % (layer_colors.get(x[0])[-1],x[0]))  # start a new layer group
+                # print(layer_colors.get(x[0])[-1],x[0])
+    
         output_file.write(x[1] + "\n")
+    output_file.write("</g>\n") # terminate the layer group
 
 """
 Produces a standard, plain vanilla SVG header. The width and height aren't
@@ -282,12 +256,32 @@ def make_svg_header(output_file, width, height):
 def make_svg_footer(output_file):
     output_file.write("</svg>\n")
 
+################################################################################################################
 # Begin main code
-if len(sys.argv) < 3:
-    sys.exit("Usage: %s input_file output_file" % sys.argv[0])
 
-input_file = open(sys.argv[1], 'r')
-output_file = open(sys.argv[2], 'w')
+# if len(sys.argv) < 3:
+#     sys.exit("Usage: %s input_file output_file" % sys.argv[0])
+
+# input_file = open(sys.argv[1], 'r')
+# output_file = open(sys.argv[2], 'w')
+parser = argparse.ArgumentParser(description=""" Convert an ASCII(!) dump of a gds file into an SVG image.  """)
+parser.add_argument("-i", help="the asciidump of the gds, that is to be converted into an SVG image", type=str)
+parser.add_argument("-o", help="the generated SVG image", type=str)
+parser.add_argument("-t", help="the definition file, containing the layer information in CSV format", type=str)
+args = parser.parse_args()
+
+input_file = open(args.i,'r')
+output_file = open(args.o, 'w')
+
+layer_colors = {}
+with open(args.t,'r') as techfile:
+    # reader = csv.DictReader(techfile)
+    reader = csv.reader(techfile)
+    next(reader)
+    for row in reader:
+        layer_colors[int(row[0])] = row[1:]
+
+
 make_svg_header(output_file, 100, 100)
 
 cells = {} # this will store our cells, lookup by name
@@ -382,9 +376,15 @@ while line != '':
                 break
 
         p = Polygon(points, layer)
+        # # debug:
+        # if layer==141: #C5
+        #     print("C5: %r" % points)
+        # if layer not in prev_layers:
+        #     prev_layers.add(layer)
         currentCell.add(p, 0, 0, 0, 0)
         # the polygon is already handling it's own offset, so we leave x=0, y=0
 
+    # print(line) # visual feedback
     line = input_file.readline()
 
 if len(sys.argv) == 4:
@@ -404,3 +404,6 @@ if len(undefined_layers) > 0:
 make_svg_footer(output_file)
 output_file.close()
 input_file.close()
+
+print(layer_colors)
+# print(layer_colors.get(rx))
