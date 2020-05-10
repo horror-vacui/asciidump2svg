@@ -1,4 +1,7 @@
 #!/usr/bin/python
+# TODO: add style to group instead of objects: saves place; less cutter in svg file.
+#       https://stackoverflow.com/a/18697658/1424118
+# TODO: (?) distinguish between Data Types
 
 """
 Cadence Layout to SVG Converter
@@ -136,26 +139,6 @@ class Polygon(Cell):
 
     def print_me(self, x, y, angle, mirror):
         """ Prints this polygon, offset by x,y """
-        if layer_colors.has_key(self.layer):
-            color_info = layer_colors.get(self.layer)
-        else:
-            # the layer does not exist
-            print "WARNING!"
-            print "  This input file uses a layer (" + str(self.layer) + ") that is not defined!"
-            print "  The objects in this layer will be drawn as ZERO opacity boxes."
-            print "  To fix this, simply add a new line to the source file for the new layer."
-            print "  Please look in the source around line 60."
-            undefined_layers.add(self.layer)
-            # color_info = ("000000", "0.8", "000000")
-            # Troquei a cor padrao para invisivel quando nao achar o layer
-            color_info = ("000000", "0.0", "ffffff")
-
-
-        # style = "fill:#" + color_info[0] + ";fill-opacity:" + color_info[1] + ";stroke:#" + color_info[2] + ";stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-        # no stroke - zti
-        # the order of the dict is defined here.
-        style = "fill:#" + color_info[0] + ";fill-opacity:" + color_info[1] + ";stroke:#" + color_info[2] + ";stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-        
         path = "M"
         first = True
         for p in self.points:
@@ -175,7 +158,8 @@ class Polygon(Cell):
         # to_write.append( (self.layer, '    <path\n       d="' + path + '%s"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
         # to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.layer) + '\"\n       d="' + path + '%s"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
         # to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.label) + '\"\n       d="' + path + '%s"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
-        to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.layer) + '_' + self.label + '\"\n       d="' + path + '"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
+        # to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.layer) + '_' + self.label + '\"\n       d="' + path + '"\n       id="' + self.id + '"\n       style="' + style + '" />\n') )
+        to_write.append( (self.layer, '    <path\n       inkscape:label=\"' + str(self.layer) + '_' + self.label + '\"\n       d="' + path + '"\n       id="' + self.id + '" />\n') )
 
 
 """
@@ -223,13 +207,30 @@ def dump_to_write_to_file(output_file):
             if len(prev_layers)>0:
                 output_file.write("</g>\n") # terminate the layer group
             prev_layers.add(x[0])
-            # print("adding new layer group")
-            # print(d_number2layer.get(x[0]))
-            # tmp = layer_colors.get(x[0])
-            # print(tmp[-1])
+            
+            if layer_colors.has_key(x[0]):
+                color_info = layer_colors.get(x[0])
+            else:
+                # the layer does not exist
+                print "WARNING!"
+                print "  This input file uses a layer (" + str(self.layer) + ") that is not defined!"
+                print "  The objects in this layer will be drawn as ZERO opacity boxes."
+                print "  To fix this, simply add a new line to the source file for the new layer."
+                print "  Please look in the source around line 60."
+                undefined_layers.add(self.layer)
+                # color_info = ("000000", "0.8", "000000")
+                # Troquei a cor padrao para invisivel quando nao achar o layer
+                color_info = ("000000", "0.0", "ffffff")
+            
+            style = "fill:#" + color_info[0] + ";fill-opacity:" + color_info[1] + ";stroke:#" + color_info[2] + ";stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+            
+            output_file.write("<g\n")  # start a new layer group
+            output_file.write("\tinkscape:groupmode=\"layer\"\n") 
+            output_file.write("\tstyle=\"" + style + "\"") 
             if layer_colors.get(x[0]):
-                output_file.write("<g>\n<title>\"%s-%d\"</title>\n" % (layer_colors.get(x[0])[-1],x[0]))  # start a new layer group
-                # print(layer_colors.get(x[0])[-1],x[0])
+                # TODO: group according to the layer purpose as well
+                output_file.write("\n\tid=\"g_%s-%d\"" % (layer_colors.get(x[0])[-1],x[0]))  # start a new layer group
+            output_file.write(">\n")  #end group definition 
     
         output_file.write(x[1] + "\n")
     output_file.write("</g>\n") # terminate the layer group
@@ -264,6 +265,7 @@ parser = argparse.ArgumentParser(description=""" Convert an ASCII(!) dump of a g
 parser.add_argument("i", help="the asciidump of the gds, that is to be converted into an SVG image", type=str)
 parser.add_argument("-o", help="the generated SVG image. If not specified, it takes the value of <input_file_without_extension>.svg", type=str)
 parser.add_argument("-t", help="the definition file, containing the layer information in CSV format.", type=str)
+parser.add_argument("-c", help="the name of the cell to be exported into the SVG image", type=str)
 args = parser.parse_args()
 
 input_file = open(args.i,'r')
@@ -391,9 +393,9 @@ while line != '':
     # print(line) # visual feedback
     line = input_file.readline()
 
-if len(sys.argv) == 4:
+if args.c is not None:
     # the user specified a cell to print out
-    cells[sys.argv[3]].print_me(0, 0, 0, 0)
+    cells[args.c].print_me(0, 0, 0, 0)
 else:
     # the last cell defined should be the top-level cell
     currentCell.print_me(0, 0, 0, 0)
@@ -408,3 +410,6 @@ if len(undefined_layers) > 0:
 make_svg_footer(output_file)
 output_file.close()
 input_file.close()
+
+# print(layer_colors)
+# print(layer_colors.get(rx))
