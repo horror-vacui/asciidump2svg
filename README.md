@@ -10,7 +10,7 @@ This project is forked from [gds2ascii](https://github.com/leoheck/gds2ascii).
 - layer style is assigned to the layer groups, which results in a smaller svg file
 - removed stroke (=edge highlight) from the objects; (it's my personal preference)
 
-## Improvement ideas 
+## Further improvement ideas 
 - read-in a more complex object style (fill, stroke, etc.) from a file. 
 - option to merge overlapping objects. With non-uity opacity, the effective opacity increases due to the overlaps. (In `inkscape` it is equivalent to select layer group and Path --> Union command)
 - layer order needs to be specified. Layer numbers does not match the physical structure of the manufacturaing layers.
