@@ -9,6 +9,7 @@ Additions:
 Improvement ideas:
 - read-in object style (fill, stroke, etc.) from a file. 
 - opton to merge overlapping objects. With non-uity opacity, the effective opacity increases due to the overlaps. (In `inkscape` it is equivalent to select layer group and Path --> Union command)
+- layer order needs to be specified. Layer numbers does not match the physical structure of the manufacturaing layers.
 
 Known issues with [gds2ascii](https://github.com/gurleyuk/gds2ascii/issues):
 - paths sometime results in meaninglessly big widths, and the text output is obscured. As a result asciidump2svg does not recognize an entry as a valid object and omits it from the SVG. Converting paths to polygons by strem-out seems to circumvent this error.
