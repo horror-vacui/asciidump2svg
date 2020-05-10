@@ -14,4 +14,5 @@ Known issues with [gds2ascii](https://github.com/gurleyuk/gds2ascii/issues):
 - paths sometime results in meaninglessly big widths, and the text output is obscured. As a result asciidump2svg does not recognize an entry as a valid object and omits it from the SVG. Converting paths to polygons by strem-out seems to circumvent this error.
 - merged polygons and paths might also results in oversized and non-physical asciidump output.
 
+Suggestion: Always compare the number of objects streamed out with the number of object processed by `ascii2dump`. The number of polygons written into the SVG is returned to the `stdout`. If you are in doubt, whether everything is processed from teh gds, you can open the gds with [klayout](https://github.com/KLayout/klayout).
 
