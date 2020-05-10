@@ -50,6 +50,7 @@ How To:  First, you need to dump the layout from Cadence. From the ICFB window,
 """
 
 import sys
+import os
 import operator
 import argparse
 import csv
@@ -259,24 +260,27 @@ def make_svg_footer(output_file):
 ################################################################################################################
 # Begin main code
 
-# if len(sys.argv) < 3:
-#     sys.exit("Usage: %s input_file output_file" % sys.argv[0])
-
-# input_file = open(sys.argv[1], 'r')
-# output_file = open(sys.argv[2], 'w')
 parser = argparse.ArgumentParser(description=""" Convert an ASCII(!) dump of a gds file into an SVG image.  """)
-parser.add_argument("-i", help="the asciidump of the gds, that is to be converted into an SVG image", type=str)
-parser.add_argument("-o", help="the generated SVG image", type=str)
-parser.add_argument("-t", help="the definition file, containing the layer information in CSV format", type=str)
+parser.add_argument("i", help="the asciidump of the gds, that is to be converted into an SVG image", type=str)
+parser.add_argument("-o", help="the generated SVG image. If not specified, it takes the value of <input_file_without_extension>.svg", type=str)
+parser.add_argument("-t", help="the definition file, containing the layer information in CSV format.", type=str)
 args = parser.parse_args()
 
 input_file = open(args.i,'r')
-output_file = open(args.o, 'w')
+
+if args.o is None:
+    output_file = open(os.path.splitext(args.i)[0] + ".svg", 'w')
+else:
+    output_file = open(args.o, 'w')
+
+if args.t is None:
+    techfile = open('techfiles/22FDX_cadence_colors_hex.csv','r')
+else:
+    techfile = open(args.t,'r')
 
 layer_colors = {}
-with open(args.t,'r') as techfile:
-    # reader = csv.DictReader(techfile)
-    reader = csv.reader(techfile)
+with techfile as tf:
+    reader = csv.reader(tf)
     next(reader)
     for row in reader:
         layer_colors[int(row[0])] = row[1:]
