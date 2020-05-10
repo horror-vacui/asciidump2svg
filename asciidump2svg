@@ -57,6 +57,8 @@ import os
 import operator
 import argparse
 import csv
+import shutil
+import subprocess
 
 
 # We keep track of all the undefined_layers so we can tell the user at the end of execution.
@@ -132,7 +134,7 @@ class Polygon(Cell):
         object_id += 1
 
         # Add the layer label to the polygon
-        if layer_colors.has_key(self.layer):
+        if self.layer in layer_colors:
             self.label = (layer_colors.get(self.layer))[3]
         else:
             self.label = "unknown"
@@ -208,15 +210,15 @@ def dump_to_write_to_file(output_file):
                 output_file.write("</g>\n") # terminate the layer group
             prev_layers.add(x[0])
             
-            if layer_colors.has_key(x[0]):
+            if x[0] in layer_colors:
                 color_info = layer_colors.get(x[0])
             else:
                 # the layer does not exist
-                print "WARNING!"
-                print "  This input file uses a layer (" + str(self.layer) + ") that is not defined!"
-                print "  The objects in this layer will be drawn as ZERO opacity boxes."
-                print "  To fix this, simply add a new line to the source file for the new layer."
-                print "  Please look in the source around line 60."
+                print("WARNING!")
+                print("  This input file uses a layer (" + str(self.layer) + ") that is not defined!")
+                print("  The objects in this layer will be drawn as ZERO opacity boxes.")
+                print("  To fix this, simply add a new line to the source file for the new layer.")
+                print("  Please look in the source around line 60.")
                 undefined_layers.add(self.layer)
                 # color_info = ("000000", "0.8", "000000")
                 # Troquei a cor padrao para invisivel quando nao achar o layer
@@ -262,13 +264,20 @@ def make_svg_footer(output_file):
 # Begin main code
 
 parser = argparse.ArgumentParser(description=""" Convert an ASCII(!) dump of a gds file into an SVG image.  """)
-parser.add_argument("i", help="the asciidump of the gds, that is to be converted into an SVG image", type=str)
+parser.add_argument("i", help="the gds or asciidump of the gds, that is to be converted into an SVG image", type=str)
 parser.add_argument("-o", help="the generated SVG image. If not specified, it takes the value of <input_file_without_extension>.svg", type=str)
 parser.add_argument("-t", help="the definition file, containing the layer information in CSV format.", type=str)
 parser.add_argument("-c", help="the name of the cell to be exported into the SVG image", type=str)
 args = parser.parse_args()
 
-input_file = open(args.i,'r')
+if os.path.splitext(args.i)[1] == "gds":
+    cmd_gds2ascii = os.path.dirname(__file__) + '/misc/gds2ascii'
+    assert shutil.which(cmd_gds2ascii), "Command gds2ascii is not in PATH."
+    input_file_name = os.path.splitext(args.i)[0] + ".asciidump"
+    subprocess.run( cmd_gds2ascii + ' %s > %s' % (args.i,input_file_name), shell=True, check=True)
+    input_file = open(input_file_name,'r')
+else: # the input file is an ASCII dump
+    input_file = open(args.i,'r')
 
 if args.o is None:
     output_file = open(os.path.splitext(args.i)[0] + ".svg", 'w')
@@ -403,13 +412,21 @@ else:
 # now that we have printed our polygons to the list, we write them to the file
 dump_to_write_to_file(output_file)
 
-print "Finished writing " + str(len(to_write)) + " polygons to file."
+print("Finished writing " + str(len(to_write)) + " polygons to file.")
 if len(undefined_layers) > 0:
-    print "There were %d undefined layers: %s" % (len(undefined_layers), list(undefined_layers))
+    print("There were %d undefined layers: %s" % (len(undefined_layers), list(undefined_layers)))
 
 make_svg_footer(output_file)
 output_file.close()
 input_file.close()
+
+# resize canvas with inkscape
+cmd = "inkscape --verb=FitCanvasToDrawing --verb=ZoomPage --verb=FileSave --verb=FileQuit %s 2> /dev/null" % args.o
+try: 
+    # os.path.isfile(args.o), "The output file %s was not created." % args.o
+    subprocess.call(cmd)
+except:
+    pass
 
 # print(layer_colors)
 # print(layer_colors.get(rx))

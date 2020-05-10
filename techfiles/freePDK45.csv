@@ -1,0 +1,10 @@
+l_num,c_fg,opac_fg,c_str,label
+1,7ef46e,0.5,7ef46e,od
+2,ff8000,0.1,ff8000,pwell
+3,00ff4c,0.1,00ff4c,nwell
+4,135E04,0.1,135E04,pp
+5,FF0000,0.1,FF0000,np
+9,e71f0d,0.6,e71f0d,poly
+10,000000,0.5,000000,contact
+11,0000ff,0.3,0000ff,m1drw
+235,0000ff,0.0,0000ff,prb
