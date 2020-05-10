@@ -405,5 +405,5 @@ make_svg_footer(output_file)
 output_file.close()
 input_file.close()
 
-print(layer_colors)
+# print(layer_colors)
 # print(layer_colors.get(rx))
