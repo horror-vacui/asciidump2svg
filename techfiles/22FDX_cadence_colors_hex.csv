@@ -1,5 +1,6 @@
 l_num,c_fg,opac_fg,c_str,label
 2,00cc66,0.5,00cc66,RX
+4,202020,0.5,202020,NW
 7,ff0000,0.8,ff0000,PC
 14,ffff00,0.2,ffff00,CA
 245,ffe6bf,0.2,ffe6bf,CB
