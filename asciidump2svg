@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # TODO: add style to group instead of objects: saves place; less cutter in svg file.
 #       https://stackoverflow.com/a/18697658/1424118
 # TODO: (?) distinguish between Data Types
@@ -215,11 +215,12 @@ def dump_to_write_to_file(output_file):
             else:
                 # the layer does not exist
                 print("WARNING!")
-                print("  This input file uses a layer (" + str(self.layer) + ") that is not defined!")
+                # print("  This input file uses a layer (" + str(self.layer) + ") that is not defined!")
+                print("  This input file uses a layer (" + str(x[0]) + ") that is not defined!")
                 print("  The objects in this layer will be drawn as ZERO opacity boxes.")
                 print("  To fix this, simply add a new line to the source file for the new layer.")
                 print("  Please look in the source around line 60.")
-                undefined_layers.add(self.layer)
+                undefined_layers.add(x[0])
                 # color_info = ("000000", "0.8", "000000")
                 # Troquei a cor padrao para invisivel quando nao achar o layer
                 color_info = ("000000", "0.0", "ffffff")
@@ -270,10 +271,12 @@ parser.add_argument("-t", help="the definition file, containing the layer inform
 parser.add_argument("-c", help="the name of the cell to be exported into the SVG image", type=str)
 args = parser.parse_args()
 
-if os.path.splitext(args.i)[1] == "gds":
+# print(os.path.splitext(args.i))
+if os.path.splitext(args.i)[1] == ".gds":
     cmd_gds2ascii = os.path.dirname(__file__) + '/misc/gds2ascii'
     assert shutil.which(cmd_gds2ascii), "Command gds2ascii is not in PATH."
     input_file_name = os.path.splitext(args.i)[0] + ".asciidump"
+    # print(input_file_name)
     subprocess.run( cmd_gds2ascii + ' %s > %s' % (args.i,input_file_name), shell=True, check=True)
     input_file = open(input_file_name,'r')
 else: # the input file is an ASCII dump
@@ -313,6 +316,7 @@ while line != '':
         currentCell = Container()
         name = things[3].strip(',')
         cells[name] = currentCell
+        # print(name)
         # Now, currentCell is the currently open cell,
         # and any subsequently parsed pieces will be added to this cell.
     elif line.startswith("Cell Instance"):
